@@ -5,9 +5,14 @@ services:
 
 language: python
 
-install: |
-  git checkout -b this-branch-definitely-does-not-exist
-  sudo -E ./install to-infn/dev
-  true
+install: sudo -E ./install to-infn/dev || true
 
-script: sudo ./test/test
+script: |
+  set -ex
+  PREFIX=/opt/plancton/.plancton
+  dielog() {
+    sudo cat $PREFIX/log/plancton.log
+    exit 1
+  }
+  [[ -f $PREFIX/plancton.pid ]] || dielog
+  sudo kill -0 $(sudo cat $PREFIX/plancton.pid) || dielog
