@@ -213,6 +213,7 @@ class Plancton(Daemon):
         ncpus = _cpu_count()
         self._max_docks = int(eval(str(conf.get("max_docks", "ncpus - 2"))))
         self._cpu_shares = self._cpus_per_dock*1024/ncpus
+        privileged_ops = conf.get("pilot_privileged", False)
         condor_conf_dict = conf.get("dock_condor_conf", {})
         self._condor_conf_list = [ 
             condor_conf_dict['condor_common_conf'] + ':/etc/condor/config.d/10-common.config',
@@ -249,7 +250,8 @@ class Plancton(Daemon):
                                          'Image': self._pilot_dock,
                                          'HostConfig': { 'CpuShares': int(self._cpu_shares),
                                                          'NetworkMode':'bridge',
-                                                         'Binds': self._condor_conf_list,
+                                                         'Privileged': privileged_ops,
+                                                         'Binds': self._condor_conf_list
                                                        }
                                         }
         if _apparmor_enabled():
