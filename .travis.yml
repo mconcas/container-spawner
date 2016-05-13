@@ -5,7 +5,10 @@ services:
 
 language: python
 
-install: sudo -E ./install to-infn/dev || true
+install: |
+  set -x
+  git rev-parse HEAD
+  sudo -E ./install to-infn/dev || true
 
 script: |
   set -ex
