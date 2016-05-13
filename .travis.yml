@@ -5,5 +5,9 @@ services:
 
 language: python
 
-install: sudo -E ./install to-infn/dev
+install: |
+  git checkout -b this-branch-definitely-does-not-exist
+  sudo -E ./install to-infn/dev
+  true
+
 script: sudo ./test/test
