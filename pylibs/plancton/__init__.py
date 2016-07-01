@@ -222,9 +222,9 @@ class Plancton(Daemon):
                            "Binds"       : [ x+":ro,Z" for x in self.conf["binds"] ],
                            "Memory"      : self.conf["max_dock_mem"],
                            "MemorySwap"  : self.conf["max_dock_mem"] + self.conf["max_dock_swap"],
-                           "Privileged"  : self.conf["docker_privileged"]
-                           # "Devices"     : self.conf["devices"]
-                           # "CapAdd"      : self.conf["capabilities"]
+                           "Privileged"  : self.conf["docker_privileged"],
+                           "Devices"     : self.conf["devices"],
+                           "CapAdd"      : self.conf["capabilities"]
                          }
         }
     self.logctl.debug("Container definition for %s:\n%s" % (cname, json.dumps(c, indent=2)))
