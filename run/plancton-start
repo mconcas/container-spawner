@@ -12,7 +12,7 @@ if [[ -z "$TRAVIS" ]] && git branch -r | grep -qE "origin/$BRANCH\$"; then
   git reset --hard origin/$BRANCH
 fi
 export PATH=$PATH:$DEST/bin
-export PYTHONPATH=$PYTHONPATH:$DEST/pylibs
+export PYTHONPATH=$PYTHONPATH:$DEST/
 set +e
 planctonctl stop 
 set -e
