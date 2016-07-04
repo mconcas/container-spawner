@@ -1,6 +1,6 @@
-sudo: requires
+sudo: requires 
 
-services:
+services: 
  - docker
 
 language: python
@@ -8,8 +8,7 @@ language: python
 install: |
   set -x
   git rev-parse HEAD
-  sudo python setup.py install
-  sudo plancton-bootstrap to-infn/dev || true
+  sudo -E bash -x ./plancton-bootstrap to-infn/dev || true
 
 script: |
   set -ex
