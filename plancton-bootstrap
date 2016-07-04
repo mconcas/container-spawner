@@ -107,7 +107,7 @@ function main() {
    echo "done."
    )
    echo "running Plancton start script ..."
-   su $Daemonuser -c $Daemondir/git/run/plancton-start
+   su $Daemonuser -c plancton-start
 }
 
 # Entry point
