@@ -1,7 +1,6 @@
 #!/bin/bash
 
 function main() {
-   [[ "$USER" != 'plancton' ]] && echo "Run this command as plancton." && exit 1
    echo "-------------------------"
    echo "|Plancton status called.|"
    echo "-------------------------"
