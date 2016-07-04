@@ -79,5 +79,5 @@ setup(
   # pip to create the appropriate form of executable for the target platform.
   # entry_points={
   # },
-  scripts = ["plancton-bootstrap", "plancton-uninstall", "run/plancton-start", "run/plancton-status", "run/plancton-stop"]
+  scripts = ["plancton-bootstrap", "plancton-uninstall", "run/plancton-start", "run/plancton-status", "run/plancton-stop", "bin/planctonctl"]
 )

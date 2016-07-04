@@ -41,73 +41,59 @@ function main() {
       exit 1
    fi
 
-   [[ $(id -u) != "0" ]] && echo -e "\e[1;91m [ERROR] this script needs to be run as root.\e[m" && exit 1;
+   [[ $(id -u) != "0" ]] && echo -e "\e[1;91m [FATAL] Run this script as root.\e[m" && exit 1;
 
    welcome
-   testreq git pip
+   testreq git
    if ! testcmd docker; then
-      echo "docker-engine not found, trying to install it automatically..."
+      echo "docker-engine not found, installing from script"
       if ! (curl -sSL https://get.docker.com/ | sh); then
-         echo "[Failed] You have to install docker-engine manually to continue."
+         echo "[WARNING] You have to install docker-engine manually"
          MANUAL_DOCKER_INSTALL=yes
          exit 1
       fi
    fi
-   echo "restarting docker daemon..."
+   echo "Restarting Docker daemon"
    service docker stop > /dev/null 2>&1
    if ! service docker start; then
-      echo "couldn't, please start/restart it manually..."
+      echo "[WARNING] Could not restart. Do it manually with:\n\t sudo service docker stop\n\t sudo service docker start"
       MANUAL_DOCKER_START=yes
    fi
 
    (
       set -e
-      echo "enabling docker daemon..."
-      systemctl enable docker > /dev/null 2>&1 ||                          # CentOS7 & Fedora > 21
-      (chkconfig docker --add && chkconfig docker on) > /dev/null 2>&1 ||  # Fedora < 21 & SuSE (lol)
-      update-rc.d docker defaults > /dev/null 2>&1 ||                      # Ubuntu &  Debian
-      rc-update add docker default > /dev/null 2>&1 ||                     # Gentoo (lol)
-      ( echo "couldn't, please enable it manually..." && MANUAL_DOCKER_ENABLE=yes )
-      echo "adding group docker..."
+      echo "Enabling docker daemon"
+      systemctl enable docker > /dev/null 2>&1 ||
+      (chkconfig docker --add && chkconfig docker on) > /dev/null 2>&1 ||
+      update-rc.d docker defaults > /dev/null 2>&1 ||
+      rc-update add docker default > /dev/null 2>&1 ||
+      ( echo "Could not enable. Enable it manually" && MANUAL_DOCKER_ENABLE=yes )
+      echo "Adding group docker"
       (getent group docker || groupadd docker) > /dev/null 2>&1
-      echo "adding $Daemonuser..."
+      echo "Adding $Daemonuser..."
       id $Daemonuser > /dev/null 2>&1 || useradd -d $Daemondir -g docker $Daemonuser > /dev/null 2>&1
-      echo "installing docker-py if not present..."
-      (python -c "import docker" || pip install docker-py) > /dev/null 2>&1
-      echo "installing pyyaml if not present..."
-      (python -c "import yaml" || pip install pyyaml) > /dev/null 2>&1
-      echo "installing prettytable if not present..."
-      (python -c "import prettytable" || pip install prettytable) > /dev/null 2>&1
-      echo "adding cronjobs to plancton's crontab..."
+      echo "Adding cronjobs for plancton"
       echo "@reboot /opt/plancton/git/run/plancton-start > /tmp/cron-plancton.log" >> /tmp/tempcron
       echo "@daily /opt/plancton/git/run/plancton-start > /tmp/cron-plancton.log" >> /tmp/tempcron
       crontab -u $Daemonuser /tmp/tempcron
       rm /tmp/tempcron; mkdir -p $Daemondir
       chown -R $Daemonuser $Daemondir
       if [[ "$MANUAL_DOCKER_INSTALL" == "yes" ]]; then
-         echo -e " \e[1;91m * Please install docker manually\e[m"
+         echo -e " \e[1;91m * Install docker-engine manually\e[m"
          false
       elif [[ "$MANUAL_DOCKER_START" == "yes" ]]; then
-         echo -e " \e[1;91m * Please start/restart docker manually\e[m"
+         echo -e " \e[1;91m * start/restart docker manually\e[m"
       elif [[ "$MANUAL_DOCKER_ENABLE" == "yes" ]]; then
-         echo -e " \e[1;33m * Please enable docker manually.\e[m"
+         echo -e " \e[1;33m * Enable docker daemon manually\e[m"
       fi
    )
    if [[ $? != 0 ]]; then
-     echo -e "\e[1;91mlast step has failed\e[m"
+     echo -e "\e[1;91mLast step has failed\e[m"
      exit 1
    fi
 
-   echo "cloning Plancton into: $Daemondir/git/ ..."
-   cd /
-   if [[ ! -d $Daemondir/git/.git ]]; then
-     [[ -d "$TRAVIS_BUILD_DIR/.git" ]] \
-       && { rsync -av --delete $TRAVIS_BUILD_DIR/ $Daemondir/git && chown -R $Daemonuser $Daemondir/git; } \
-       || su $Daemonuser -c "git clone https://github.com/mconcas/plancton $Daemondir/git"
-   fi
-
-   echo "cloning Plancton configuration repository: $conf_branch ..."
    su $Daemonuser -c "mkdir -p $Daemondir/.plancton"
+   echo "Cloning Plancton configuration repository: $conf_branch"
    [[ ! -d $Daemondir/.plancton/conf/.git ]] && su $Daemonuser -c "git clone -b $conf_branch $Configrepo $Daemondir/.plancton/conf"
    echo "Parsing apparmor profile..."
    set +e
