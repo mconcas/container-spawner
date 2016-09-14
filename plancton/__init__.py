@@ -141,8 +141,8 @@ class Plancton(Daemon):
   def _filtered_list(self, name, reverse=True):
     self.logctl.debug("Fetching list of Plancton running containers")
     jlist = self.container_list(all=True)
-    fjlist = [ d for d in jlist if (d["Names"][0][1:].startswith(name) and d["Status"].startswith("Up")) ]
-    srtlist = sorted(fjlist, key=lambda k: k["Created"], reverse=reverse)
+    fjlist = [ d for d in jlist if (d.get("Names",[""])[0][1:].startswith(name) and d.get("Status",[""]).startswith("Up")) ]
+    srtlist = sorted(fjlist, key=lambda k: k.get("Created",0), reverse=reverse)
     return srtlist
 
   # Set up rotating logging system. Logfiles in: `self._logdir`.
@@ -154,7 +154,7 @@ class Plancton(Daemon):
     format = '%(asctime)s %(name)s %(levelname)s [%(module)s.%(funcName)s] %(message)s'
     datefmt = '%Y-%m-%d %H:%M:%S'
     log_file_handler = logging.handlers.RotatingFileHandler(self._logdir + '/plancton.log',
-      mode='a', maxBytes=1000000, backupCount=5)
+      mode='a', maxBytes=10000000, backupCount=50)
     log_file_handler.setFormatter(logging.Formatter(format, datefmt))
     log_file_handler.doRollover()
     self.logctl.setLevel(10)
@@ -196,14 +196,14 @@ class Plancton(Daemon):
       if now-self._overhead_first_time > self.conf["grace_kill"]:
         cont_list = self._filtered_list(name=self._container_prefix)
         if cont_list:
-          self.logctl.debug("Killing container %s" % cont_list[0]["Id"])
+          self.logctl.debug("Killing container %s" % cont_list[0].get("Id",0))
           try:
-            self.container_remove(cont_list[0]['Id'], force=True)
+            self.container_remove(cont_list[0].get("Id",0), force=True)
             self._last_kill_time = time.time()
           except Exception as e:
-            self.logctl.error("Cannot remove %s: %s", cont_list[0]["Id"], e)
+            self.logctl.error("Cannot remove %s: %s", cont_list[0].get("Id","NO_IDENTITY_FOUND"), e)
           else:
-            self.logctl.info('Container %s removed successfully' % cont_list[0]['Id'])
+            self.logctl.info('Container %s removed successfully' % cont_list[0].get("Id", "NO_IDENTITY_FOUND"))
         else:
           self.logctl.debug('No workers found, nothing to do')
           self._overhead_first_time = 0
@@ -241,22 +241,22 @@ class Plancton(Daemon):
   def _start_container(self, container):
     if container is None:
       return None
-    self.logctl.debug("Starting %s" % str(container['Id']))
+    self.logctl.debug("Starting %s" % str(container.get("Id","NO_IDENTITY_FOUND")))
     try:
-      self.container_start(id=container['Id'])
+      self.container_start(id=container.get("Id",0))
     except Exception as e:
       self.logctl.error(e)
       return None
     try:
-      jj = self.container_inspect(id=container['Id'])
+      jj = self.container_inspect(id=container.get('Id',0))
     except Exception as e:
       self.logctl.error(e)
       return None
     if pid_exists(jj['State']['Pid']):
-      self.logctl.info('Spawned %s (main PID: %s)' % (str(container['Id'])[:12], jj['State']['Pid']))
+      self.logctl.info('Spawned %s (main PID: %s)' % (str(container.get("Id","NO_IDENTITY_FOUND"))[:12], jj['State']['Pid']))
       return jj['State']['Pid']
     else:
-      self.logctl.error('No active process found for %s with PID %s.' % (container['Id'], jj['State']['Pid']))
+      self.logctl.error('No active process found for %s with PID %s.' % (container.get("Id","NO_IDENTITY_FOUND"), jj['State']['Pid']))
       return None
 
   # Pretty print the statuses of controlled containers.
@@ -268,12 +268,12 @@ class Plancton(Daemon):
       self.logctl.error("Couldn't get container list: %s", e)
     num = 0
     for c in clist:
-      if c['Names'][0][1:].startswith(self._container_prefix):
+      if c.get("Names",[""])[0][1:].startswith(self._container_prefix):
         num = num+1
-        shortid = c['Id'][:12]
+        shortid = c.get("Id",0)[:12]
         status = " active " if c['Status'].startswith("Up") else "inactive"
-        name = c['Names'][0][1:]
-        pid = self.container_inspect(id=c['Id'])['State'].get('Pid', 0)
+        name = c.get("Names", [""])[0][1:]
+        pid = self.container_inspect(id=c.get("Id", 0)['State'].get("Pid", 0))
         pid = " --- " if pid == 0 else str(pid)
         status_table.add_row([num, shortid, status, name, pid])
     self.logctl.info('Container list:\n' + str(status_table))
@@ -285,7 +285,7 @@ class Plancton(Daemon):
     except Exception as e:
       self.logctl.error("Couldn't get containers list, defaulting running value to zero: %s", e)
       return 0
-    return len([ x for x in clist if x["Status"].startswith("Up") ])
+    return len([ x for x in clist if x.get("Status","").startswith("Up") ])
 
   # Clean up dead or stale containers.
   def _control_containers(self):
@@ -296,13 +296,13 @@ class Plancton(Daemon):
       return
     for i in clist:
       if not i['Names'][0][1:].startswith(self._container_prefix):
-        self.logctl.debug("Ignoring container %s", i["Names"][0])
+        self.logctl.debug("Ignoring container %s", i.get("Names", [""])[0])
         continue
       to_remove = False
       # TTL threshold block
       if i['Status'].startswith("Up"):
         try:
-          insdata = self.container_inspect(i['Id'])
+          insdata = self.container_inspect(i.get("Id",0))
         except Exception as e:
           self.logctl.error("Couldn't get container information! %s", e)
         else:
@@ -322,7 +322,7 @@ class Plancton(Daemon):
         except Exception as e:
           self.logctl.warning('It was not possible to remove container with id %s: %s', i['Id'], e)
         else:
-          self.logctl.info('Removed container %s', i['Id'])
+          self.logctl.info('Removed container %s', i.get("Id", "NO_IDENTITY_FOUND"))
 
   def onexit(self):
     self.logctl.info('Graceful termination requested: will exit gracefully soon.')
