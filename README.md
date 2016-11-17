@@ -18,12 +18,12 @@ Plancton is installable via pip:
 Plancton needs to be bootstrapped from a configuration, by design cloned from a `git` repository.
 As super-user run:
 
-	# plancton-bootstrap <repository-name:branch-tag>
+	# plancton-bootstrap <repository-name>:<branch-tag>
 
 ### Dryrun
 A dry-run example is available by running:
 
-	# plancton-bootstrap <mconcas/plancton-conf:dryrun>
+	# plancton-bootstrap mconcas/plancton-conf:dryrun
 
 or:
 
