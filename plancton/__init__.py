@@ -109,7 +109,8 @@ class Plancton(Daemon):
                logdir,
                confdir,
                socket_url="unix://var/run/docker.sock",
-               drainfile="/var/run/plancton/drain"):
+               drainfile="/var/run/plancton/drain",
+               fstopfile="/var/run/plancton/forcestop"):
     super(Plancton, self).__init__(name, pidfile)
     self._start_time = self._last_update_time = self._last_confup_time = time.time()
     self._last_kill_time = 0
@@ -123,7 +124,9 @@ class Plancton(Daemon):
     self._cont_config = None  # container configuration (dict)
     self._container_prefix = "plancton-worker"
     self._drainfile = drainfile
+    self._fstopfile = fstopfile
     self._draindir = os.path.dirname(self._drainfile)
+    self._fstopdir = os.path.dirname(self._fstopfile)
     self.docker_client = Client(base_url=self.sockpath, version="auto")
     self.conf = {
       "influxdb_url"      : None,             # URL to InfluxDB (with #database)
@@ -377,7 +380,7 @@ class Plancton(Daemon):
           self.logctl.info("Removed container %s", i["Id"])
 
   def cmd(self, arg=""):
-    if arg is "drain":
+    if arg == "drain":
       self.logctl.info("Draining status requested")
       try:
         os.open(self._drainfile, os.O_CREAT | os.O_EXCL)
@@ -389,7 +392,7 @@ class Plancton(Daemon):
       else:
         self.logctl.info("Entered in draining status")
 
-    elif arg is "undrain":
+    elif arg == "undrain":
       self.logctl.info("Exit from draining status requested")
       try:
         os.remove(self._drainfile)
@@ -401,12 +404,50 @@ class Plancton(Daemon):
       else:
         self.logctl.info("Exited from draining status")
 
+    elif arg == "force-stop":
+      try:
+        os.open(self._fstopfile, os.O_CREAT | os.O_EXCL)
+      except OSError as e:
+        if e.errno == errno.EEXIST:
+          self.logctl.info("Already force-stopping...")
+        else:
+          self.logctl.warning("There was a problem in creating stopfile: %s" % e)
+      else:
+        self.logctl.info("Entered in force-stop mode")
+      
     else: # This should not occur
       self.logctl.warning("Unknown command: %s passed, ignoring..." % arg)
 
 
   def onexit(self):
-    self.logctl.info('Graceful termination requested: will exit gracefully soon')
+    if os.path.isfile(self._fstopfile):
+      self.logctl.info("fstopfile found: %s" % self._fstopfile)
+      try:
+        os.remove(self._fstopfile)
+      except OSError as e:
+        if e.errno == errno.ENOENT:
+          self.logctl.warning("fstopfile not found, skipping...")
+        else:
+          self.logctl.warning("There was a problem in removing fstopfile: %s" % e)
+      else:
+        self.logctl.info("fstopfile removed correctly")
+      try:
+        clist = self.container_list(all=True)
+      except Exception as e:
+        self.logctl.error("Couldn't get containers list: %s", e)
+        return
+      else:
+        self.logctl.info("Force stop called: removing all containers...")
+        for i in clist:
+          if i.get("Names", [""])[0][1:].startswith(self._container_prefix):
+            try:
+              self.container_remove(id=i['Id'], force=True)
+            except Exception as e:
+              self.logctl.warning('It was not possible to remove container with id %s: %s', i['Id'], e)
+            else:                 
+              self.logctl.info("Removed container %s", i["Id"])
+    else:
+      self.logctl.info('Graceful termination requested: will exit gracefully soon')
     self._do_main_loop = False
     return True
 
@@ -419,6 +460,10 @@ class Plancton(Daemon):
       os.mkdir(self._draindir, 0700)
     else:
       os.chmod(self._draindir, 0700)
+    if not os.path.isdir(self._fstopdir):
+      os.mkdir(self._fstopdir, 0700)
+    else:
+      os.chmod(self._fstopdir, 0700)
     self._read_conf()
     self._influxdb_setup()
     self.docker_pull(*self.conf["docker_image"].split(":", 1))

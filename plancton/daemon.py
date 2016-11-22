@@ -179,7 +179,7 @@ class Daemon(object):
             self.logctl.info('Not running')
             return False
 
-    def stop(self):
+    def stop(self, cmd=""):
         """ Stop the daemon.
             An attempt to kill the daemon is performed for 30 seconds sending **signal 15 (SIGTERM)**: if
             the daemon is implemented properly, it will perform its shutdown operations and it will exit
@@ -187,12 +187,17 @@ class Daemon(object):
             If the daemon is still running after this termination attempt, **signal 9 (KILL)** is sent, and
             daemon is abruptly terminated.
             Note that this attempt might fail as well.
+            If a `cmd` is specified, it will run self.cmd(arg=cmd) method before anything else.
             @return True on success, where "success" means that the final status is that the daemon is not
             running: an example of success is when the daemon wasn't running and `stop()` is
             called. False is returned otherwise.
         """
+        if len(cmd) != 0:
+            self.logctl.info("Executing \"%s\" command before stopping, this may take a while..." % cmd)
+            self.cmd(arg=cmd)
+        else:
+            self.logctl.info('Stopping, this may take a while...')
 
-        self.logctl.info('stopping, this may take a while...')
         # Get the pid from the pidfile
         self.readPid()
         if not self.isRunning():
@@ -224,10 +229,10 @@ class Daemon(object):
         return True
 
     def cmd(self, arg=""):
-      """ Program's cmd function, to be overridden by subclasses.
-          @return True if call succeeds, False otherwise. 
-      """
-      return True
+        """ Program's cmd function, to be overridden by subclasses.
+            @return True if call succeeds, False otherwise. 
+        """
+        return True
 
     def trapExitSignals(self, func):
         """ Maps exit signals to a function. """

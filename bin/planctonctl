@@ -55,6 +55,8 @@ if cmd == 'start':
   r = daemon_instance.start()
 elif cmd == 'stop':
   r = daemon_instance.stop()
+elif cmd == 'force-stop':
+  r = daemon_instance.stop(cmd="force-stop")
 elif cmd == 'status':
   r = daemon_instance.status()
 elif cmd == 'drain':
