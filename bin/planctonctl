@@ -48,7 +48,7 @@ except IndexError:
 daemon_instance = Plancton('plancton', pidfile=pidfile, logdir=logdir, confdir=confdir)
 
 def help():
-  sys.stderr.write('Usage: %s [start|stop|status|nodaemon|help]\n' % os.path.basename(sys.argv[0]))
+  sys.stderr.write('Usage: %s [start|stop|status|[un]drain|nodaemon|help]\n' % os.path.basename(sys.argv[0]))
 
 r = None
 if cmd == 'start':
@@ -57,6 +57,10 @@ elif cmd == 'stop':
   r = daemon_instance.stop()
 elif cmd == 'status':
   r = daemon_instance.status()
+elif cmd == 'drain':
+  r = daemon_instance.cmd("drain")
+elif cmd == 'undrain':
+  r = daemon_instance.cmd("undrain")
 elif cmd == 'nodaemon':
   r = daemon_instance.run()
 elif cmd == 'help':

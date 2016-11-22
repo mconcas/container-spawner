@@ -223,6 +223,12 @@ class Daemon(object):
         self.logctl.warning('force-killed')
         return True
 
+    def cmd(self, arg=""):
+      """ Program's cmd function, to be overridden by subclasses.
+          @return True if call succeeds, False otherwise. 
+      """
+      return True
+
     def trapExitSignals(self, func):
         """ Maps exit signals to a function. """
         for s in [ signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT ]:
