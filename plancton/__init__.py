@@ -444,6 +444,9 @@ class Plancton(Daemon):
     draining = os.path.isfile(self._drainfile)
     if draining:
       self.logctl.info("Drain status file %s found: no new containers will be started" % self._drainfile)
+    self.streamer(series="daemon",
+                  tags={ "hostname": self._hostname },
+                  fields={ "draining": "draining" in locals() or False })
     self._overhead_control()
     prev_img = self.conf["docker_image"]
     prev_influxdb_url = self.conf["influxdb_url"]
