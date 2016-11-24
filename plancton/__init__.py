@@ -50,6 +50,9 @@ def robust(tries=5, delay=3, backoff=2):
               (f.__name__, ldelay)
           self.logctl.warning(msg)
           self.logctl.warning(e)
+          self.streamer(series="daemon",
+                  tags={ "hostname": self._hostname },
+                  fields={ "status": "\"waiting\"" })
           time.sleep(ldelay)
           ltries -= 1
           ldelay *= backoff
@@ -57,6 +60,9 @@ def robust(tries=5, delay=3, backoff=2):
           msg = "[%s], Failed to reach docker, retrying in %d seconds." % (f.__name__, ldelay)
           self.logctl.warning(msg)
           self.logctl.warning(e)
+          self.streamer(series="daemon",
+                  tags={ "hostname": self._hostname },
+                  fields={ "status": "\"waiting\"" })
           time.sleep(ldelay)
           ltries -= 1
           ldelay *= backoff
@@ -64,6 +70,9 @@ def robust(tries=5, delay=3, backoff=2):
           msg = "[%s], Failed to successfully evade API request, retrying in %d seconds" % (f.__name__, ldelay)
           self.logctl.warning(msg)
           self.logctl.warning(e)
+          self.streamer(series="daemon",
+                  tags={ "hostname": self._hostname },
+                  fields={ "status": "\"waiting\"" })
           time.sleep(ldelay)
           ltries -= 1
           ldelay *= backoff
@@ -444,6 +453,9 @@ class Plancton(Daemon):
     draining = os.path.isfile(self._drainfile)
     if draining:
       self.logctl.info("Drain status file %s found: no new containers will be started" % self._drainfile)
+    self.streamer(series="daemon",
+                  tags={ "hostname": self._hostname },
+                  fields={ "status": "\"draining\"" if draining else "\"active\"" })
     self._overhead_control()
     prev_img = self.conf["docker_image"]
     prev_influxdb_url = self.conf["influxdb_url"]

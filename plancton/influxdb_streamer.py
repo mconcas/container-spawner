@@ -50,7 +50,7 @@ class InfluxDBStreamer():
       self.logctl.debug("Sending data returned %d" % r.status_code)
       r.raise_for_status()
       return True
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
       self.logctl.error("Error sending data: %s" % e)
       self.db_is_created = False
       return False
