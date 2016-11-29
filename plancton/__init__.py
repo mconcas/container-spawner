@@ -119,7 +119,7 @@ class Plancton(Daemon):
     self._cont_config = None  # container configuration (dict)
     self._container_prefix = "plancton-worker"
     self._drainfile = self._rundir + "/drain"
-    self._fstopfile = self._rundir + "/fstopfile"
+    self._fstopfile = self._rundir + "/force-stop"
     self._force_kill = False
     self.docker_client = Client(base_url=self.sockpath, version="auto")
     self.conf = {
@@ -332,9 +332,8 @@ class Plancton(Daemon):
           dock_uptime = utc_time() - time.mktime(statobj.timetuple())
           if dock_uptime > self.conf["max_ttl"] or self._force_kill:
             if self._force_kill:
-              self.logctl.info("Force-killing %s ", i['Id'])
-            else:
-              self.logctl.info("Killing %s since it exceeded the max TTL", i['Id'])
+              self.logctl.info("Force killing %s" if self._force_kill else \
+                               "Killing %s since it exceeded the max TTL", i['Id'])
             self.streamer(series="container",
                           tags={ "hostname": self._hostname,
                                  "started": True,
