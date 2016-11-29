@@ -187,7 +187,6 @@ class Daemon(object):
             If the daemon is still running after this termination attempt, **signal 9 (KILL)** is sent, and
             daemon is abruptly terminated.
             Note that this attempt might fail as well.
-            If a `cmd` is specified, it will run self.cmd(arg=cmd) method before anything else.
             @return True on success, where "success" means that the final status is that the daemon is not
             running: an example of success is when the daemon wasn't running and `stop()` is
             called. False is returned otherwise.
