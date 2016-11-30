@@ -478,9 +478,10 @@ class Plancton(Daemon):
       count = 0
       self.main_loop()
       self.logctl.debug("Sleeping %d seconds..." % self.conf["main_sleep"])
-      while (self._do_main_loop or self._force_kill) and count < self.conf["main_sleep"]:
+      self._force_kill = os.path.isfile(self._fstopfile)
+      while self._do_main_loop and count < self.conf["main_sleep"] and not self._force_kill:
         time.sleep(1)
         count = count+1
-      self._force_kill = os.path.isfile(self._fstopfile)
-    self.logctl.info("Exiting gracefully.")
+        self._force_kill = os.path.isfile(self._fstopfile)
+    self.logctl.info("Exiting gracefully")
     return 0
