@@ -52,7 +52,7 @@ def robust(tries=5, delay=3, backoff=2):
           self.logctl.warning(e)
           self.streamer(series="daemon",
                         tags={ "hostname": self._hostname },
-                        fields={ "status": "\"waiting\"" })
+                        fields={ "status": "waiting" })
           time.sleep(ldelay)
           ltries -= 1
           ldelay *= backoff
@@ -69,7 +69,7 @@ def robust(tries=5, delay=3, backoff=2):
           self.logctl.warning(e)
           self.streamer(series="daemon",
                         tags={ "hostname": self._hostname },
-                        fields={ "status": "\"waiting\"" })
+                        fields={ "status": "waiting" })
           time.sleep(ldelay)
           ltries -= 1
           ldelay *= backoff
@@ -452,7 +452,7 @@ class Plancton(Daemon):
       self.logctl.info("Force kill file %s found: not starting containers, killing existing" % self._fstopfile)
     self.streamer(series="daemon",
                   tags={ "hostname": self._hostname },
-                  fields={ "status": "\"draining\"" if draining else "\"active\"" })
+                  fields={ "status": "draining" if draining else "active" })
     self._overhead_control()
     prev_img = self.conf["docker_image"]
     prev_influxdb_url = self.conf["influxdb_url"]
