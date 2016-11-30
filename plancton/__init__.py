@@ -442,6 +442,8 @@ class Plancton(Daemon):
     draining = os.path.isfile(self._drainfile)
     if draining:
       self.logctl.info("Drain status file %s found: no new containers will be started" % self._drainfile)
+    if self._force_kill:
+      self.logctl.info("Force kill file %s found: not starting containers, killing existing" % self._fstopfile)
     self._overhead_control()
     prev_img = self.conf["docker_image"]
     prev_influxdb_url = self.conf["influxdb_url"]
@@ -461,11 +463,11 @@ class Plancton(Daemon):
     fitting_docks = int(self.idle*0.95*self._num_cpus/(self.conf["cpus_per_dock"]*100))
     launchable_containers = min(fitting_docks, max(self.conf["max_docks"]-running, 0))
     self.logctl.debug("Potentially fitting containers based on CPU utilisation: %d", fitting_docks)
-    if not draining and now-self._last_kill_time > self.conf["grace_spawn"]:
+    if not draining and not self._force_kill and now-self._last_kill_time > self.conf["grace_spawn"]:
       self.logctl.info("Will launch %d new container(s)" % launchable_containers)
       for _ in range(launchable_containers):
         self._start_container(self._create_container())
-    elif not draining and launchable_containers > 0:
+    elif not draining and not self._force_kill and launchable_containers > 0:
       self.logctl.info("Not launching %d containers: too little time elapsed after last kill" % launchable_containers)
     self._control_containers()
     self._last_update_time = time.time()
