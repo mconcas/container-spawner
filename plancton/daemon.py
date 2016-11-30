@@ -173,10 +173,10 @@ class Daemon(object):
         """
         self.readPid()
         if self.isRunning():
-            self.logctl.info('running with PID %d' % self.pid)
+            self.logctl.info('Running with PID %d' % self.pid)
             return True
         else:
-            self.logctl.info('not running')
+            self.logctl.info('Not running')
             return False
 
     def stop(self):
