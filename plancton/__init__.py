@@ -121,6 +121,7 @@ class Plancton(Daemon):
     self._drainfile = self._rundir + "/drain"
     self._fstopfile = self._rundir + "/force-stop"
     self._force_kill = False
+    self._do_main_loop = True
     self.docker_client = Client(base_url=self.sockpath, version="auto")
     self.conf = {
       "influxdb_url"      : None,             # URL to InfluxDB (with #database)
@@ -427,7 +428,6 @@ class Plancton(Daemon):
     self._influxdb_setup()
     self.docker_pull(*self.conf["docker_image"].split(":", 1))
     self._control_containers()
-    self._do_main_loop = True
 
   # Main loop, do comparison between uptime and thresholds sets for updates.
   def main_loop(self):
