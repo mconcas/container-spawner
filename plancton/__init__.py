@@ -402,7 +402,7 @@ class Plancton(Daemon):
         self.logctl.warning("Cannot remove drain status file %s: %s" % (self._drainfile, e))
 
   def kill(self):
-    self.logctl.info("Force-stop mode requested: no new containers started")
+    self.logctl.info("Force-stop mode requested: not starting new containers and killing running ones")
     try:
       os.open(self._fstopfile, os.O_CREAT|os.O_EXCL)
     except OSError as e:
@@ -416,10 +416,14 @@ class Plancton(Daemon):
     self._do_main_loop = False
 
   def init(self):
-    self.logctl.info("---- plancton daemon v%s ----" % self.__version__)
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("docker").setLevel(logging.WARNING)
     self._setup_log_files()
+    self.logctl.info("---- plancton v%s running with pid %d ----" % (self.__version__, os.getpid()))
+    try:
+      os.remove(self._fstopfile)
+    except OSError as e:
+      pass
     if not os.path.isdir(self._rundir):
       os.mkdir(self._rundir, 0700)
     else:
