@@ -411,13 +411,8 @@ class Plancton(Daemon):
     return True
 
   def onexit(self):
-    if os.path.isfile(self._fstopfile):
-      self.logctl.info("Waiting for the cleanup of running containers: will gracefully exit later on.")
-      return False
-    else:
-      self.logctl.info("Graceful termination requested: will exit gracefully soon")
-      self._do_main_loop = False
-      return True
+    self.logctl.info("Graceful termination requested: will exit gracefully soon")
+    self._do_main_loop = False
 
   def init(self):
     self.logctl.info("---- plancton daemon v%s ----" % self.__version__)

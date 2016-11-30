@@ -71,7 +71,7 @@ elif cmd == 'drain':
 elif cmd == 'resume':
   r = daemon_instance.resume()
 elif cmd == 'nodaemon':
-  r = daemon_instance.run()
+  r = daemon_instance.runForeground()
 elif cmd == 'help':
   help()
   r = True
