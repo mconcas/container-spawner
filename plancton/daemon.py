@@ -187,7 +187,6 @@ class Daemon(object):
             If the daemon is still running after this termination attempt, **signal 9 (KILL)** is sent, and
             daemon is abruptly terminated.
             Note that this attempt might fail as well.
-            If a `cmd` is specified, it will run self.cmd(arg=cmd) method before anything else.
             @return True on success, where "success" means that the final status is that the daemon is not
             running: an example of success is when the daemon wasn't running and `stop()` is
             called. False is returned otherwise.
@@ -242,20 +241,22 @@ class Daemon(object):
             and the mapping is restored in case exiting is cancelled.
         """
         self.trapExitSignals(self.exitHandlerNoOp)
-        if self.onexit():
-            # Exit was confirmed
-            sys.exit(0)
-        else:
-            # Exit was cancelled
-            self.trapExitSignals(self.exitHandlerReal)
+        self.onexit()
+        self.trapExitSignals(self.exitHandlerReal)
 
     def onexit(self):
         """ Program's exit function, to be overridden by subclasses.
             This function is called when an exit signal is caught: it should be used to implement cleanup
             functions.
-            @return When returning True, exiting continues, when returning False exiting is cancelled
         """
-        return True
+        pass
+
+    def runForeground(self):
+      self.trapExitSignals(self.exitHandlerReal)
+      try:
+        self.run()
+      except KeyboardInterrupt:
+        self.onexit()
 
     def run(self):
         """ Program's main loop, to be overridden by subclasses.

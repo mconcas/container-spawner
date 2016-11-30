@@ -53,7 +53,7 @@ daemon_instance = Plancton('plancton', pidfile=pidfile, logdir=logdir,
                                        rundir=rundir, confdir=confdir)
 
 def help():
-  sys.stderr.write('Usage: %s [start|stop|status|nodaemon|drain|resume|help]\n' % \
+  sys.stderr.write('usage: %s [start|stop|force-stop|status|nodaemon|drain|resume|help]\n' % \
                    os.path.basename(sys.argv[0]))
 
 r = None
@@ -71,7 +71,7 @@ elif cmd == 'drain':
 elif cmd == 'resume':
   r = daemon_instance.resume()
 elif cmd == 'nodaemon':
-  r = daemon_instance.run()
+  r = daemon_instance.runForeground()
 elif cmd == 'help':
   help()
   r = True

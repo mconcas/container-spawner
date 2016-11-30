@@ -119,8 +119,9 @@ class Plancton(Daemon):
     self._cont_config = None  # container configuration (dict)
     self._container_prefix = "plancton-worker"
     self._drainfile = self._rundir + "/drain"
-    self._fstopfile = self._rundir + "/fstopfile"
+    self._fstopfile = self._rundir + "/force-stop"
     self._force_kill = False
+    self._do_main_loop = True
     self.docker_client = Client(base_url=self.sockpath, version="auto")
     self.conf = {
       "influxdb_url"      : None,             # URL to InfluxDB (with #database)
@@ -332,9 +333,8 @@ class Plancton(Daemon):
           dock_uptime = utc_time() - time.mktime(statobj.timetuple())
           if dock_uptime > self.conf["max_ttl"] or self._force_kill:
             if self._force_kill:
-              self.logctl.info("Force-killing %s ", i['Id'])
-            else:
-              self.logctl.info("Killing %s since it exceeded the max TTL", i['Id'])
+              self.logctl.info("Force killing %s" if self._force_kill else \
+                               "Killing %s since it exceeded the max TTL", i['Id'])
             self.streamer(series="container",
                           tags={ "hostname": self._hostname,
                                  "started": True,
@@ -402,7 +402,7 @@ class Plancton(Daemon):
         self.logctl.warning("Cannot remove drain status file %s: %s" % (self._drainfile, e))
 
   def kill(self):
-    self.logctl.info("Force-stop mode requested: no new containers started")
+    self.logctl.info("Force-stop mode requested: not starting new containers and killing running ones")
     try:
       os.open(self._fstopfile, os.O_CREAT|os.O_EXCL)
     except OSError as e:
@@ -412,19 +412,18 @@ class Plancton(Daemon):
     return True
 
   def onexit(self):
-    if os.path.isfile(self._fstopfile):
-      self.logctl.info("Waiting for the cleanup of running containers: will gracefully exit later on.")
-      return False
-    else:
-      self.logctl.info("Graceful termination requested: will exit gracefully soon")
-      self._do_main_loop = False
-      return True
+    self.logctl.info("Graceful termination requested: will exit gracefully soon")
+    self._do_main_loop = False
 
   def init(self):
-    self.logctl.info("---- plancton daemon v%s ----" % self.__version__)
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("docker").setLevel(logging.WARNING)
     self._setup_log_files()
+    self.logctl.info("---- plancton v%s running with pid %d ----" % (self.__version__, os.getpid()))
+    try:
+      os.remove(self._fstopfile)
+    except OSError as e:
+      pass
     if not os.path.isdir(self._rundir):
       os.mkdir(self._rundir, 0700)
     else:
@@ -433,7 +432,6 @@ class Plancton(Daemon):
     self._influxdb_setup()
     self.docker_pull(*self.conf["docker_image"].split(":", 1))
     self._control_containers()
-    self._do_main_loop = True
 
   # Main loop, do comparison between uptime and thresholds sets for updates.
   def main_loop(self):
@@ -444,6 +442,8 @@ class Plancton(Daemon):
     draining = os.path.isfile(self._drainfile)
     if draining:
       self.logctl.info("Drain status file %s found: no new containers will be started" % self._drainfile)
+    if self._force_kill:
+      self.logctl.info("Force kill file %s found: not starting containers, killing existing" % self._fstopfile)
     self._overhead_control()
     prev_img = self.conf["docker_image"]
     prev_influxdb_url = self.conf["influxdb_url"]
@@ -463,11 +463,11 @@ class Plancton(Daemon):
     fitting_docks = int(self.idle*0.95*self._num_cpus/(self.conf["cpus_per_dock"]*100))
     launchable_containers = min(fitting_docks, max(self.conf["max_docks"]-running, 0))
     self.logctl.debug("Potentially fitting containers based on CPU utilisation: %d", fitting_docks)
-    if not draining and now-self._last_kill_time > self.conf["grace_spawn"]:
+    if not draining and not self._force_kill and now-self._last_kill_time > self.conf["grace_spawn"]:
       self.logctl.info("Will launch %d new container(s)" % launchable_containers)
       for _ in range(launchable_containers):
         self._start_container(self._create_container())
-    elif not draining and launchable_containers > 0:
+    elif not draining and not self._force_kill and launchable_containers > 0:
       self.logctl.info("Not launching %d containers: too little time elapsed after last kill" % launchable_containers)
     self._control_containers()
     self._last_update_time = time.time()
@@ -480,9 +480,10 @@ class Plancton(Daemon):
       count = 0
       self.main_loop()
       self.logctl.debug("Sleeping %d seconds..." % self.conf["main_sleep"])
-      while (self._do_main_loop or self._force_kill) and count < self.conf["main_sleep"]:
+      self._force_kill = os.path.isfile(self._fstopfile)
+      while self._do_main_loop and count < self.conf["main_sleep"] and not self._force_kill:
         time.sleep(1)
         count = count+1
-      self._force_kill = os.path.isfile(self._fstopfile)
-    self.logctl.info("Exiting gracefully.")
+        self._force_kill = os.path.isfile(self._fstopfile)
+    self.logctl.info("Exiting gracefully")
     return 0
