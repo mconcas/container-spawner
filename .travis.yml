@@ -34,7 +34,7 @@ script: |
   ls -l $PIDFILE || true
   sudo test -f $PIDFILE || dielog
   sudo kill -0 $(sudo cat $PIDFILE) || dielog
-  sudo planctonctl drain-kill
+  sudo planctonctl drain-stop
   sudo test -f /var/run/plancton/drain || dielog
   sleep 40
   sudo grep -qi "no new containers will be started" /var/log/plancton/plancton.log || dielog
