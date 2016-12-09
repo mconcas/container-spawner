@@ -72,7 +72,7 @@ elif cmd == 'status':
 elif cmd == 'drain':
   r = daemon_instance.drain()
 elif cmd == 'drain-stop':
-  r = daemon_instance.drain(kill=True)
+  r = daemon_instance.drain(stop=True)
 elif cmd == 'resume':
   r = daemon_instance.resume()
 elif cmd == 'nodaemon':
