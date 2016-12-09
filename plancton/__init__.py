@@ -391,11 +391,13 @@ class Plancton(Daemon):
           self.logctl.error("Cannot remove force-stop status file %s: %s" % (self._fstopfile, e))
 
   def drain(self, kill=False):
-    self.logctl.info("Drain mode requested: no new containers started")
     try:
       os.open(self._drainfile, os.O_CREAT|os.O_EXCL)
       if kill:
+        self.logctl.info("Drain-kill mode requested, no new containers started, will exit afterwards")
         os.open(self._drainfile_kill, os.O_CREAT|os.O_EXCL)
+      else:
+        self.logctl.info("Drain mode requested, no new containers started")
     except OSError as e:
       if e.errno != errno.EEXIST:
         self.logctl.error("Cannot create drain/drain-kill status file(s) %s" % e)
@@ -492,7 +494,7 @@ class Plancton(Daemon):
     if running == 0 and draining and os.path.isfile(self._drainfile_kill):
       self.logctl.info("Drain-kill mode requested. No running containers found, will exit.")
       os.remove(self._drainfile_kill)
-      onexit()
+      self.onexit()
 
 
   # Main daemon function. Return is in the range 0-255.

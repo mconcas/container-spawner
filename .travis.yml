@@ -23,9 +23,20 @@ script: |
   sudo test -f $PIDFILE || dielog
   sudo kill -0 $(sudo cat $PIDFILE) || dielog
   sudo planctonctl drain
+  sudo test -f /var/run/plancton/drain || dielog
   sleep 40
   sudo grep -qi "no new containers will be started" /var/log/plancton/plancton.log || dielog
   sudo planctonctl resume
-  [[ ! -e /var/run/plancton/drain ]]
+  ! sudo test -f /var/run/plancton/drain || dielog
   sudo planctonctl force-stop
   sudo grep -qi "not starting containers, killing existing" /var/log/plancton/plancton.log || dielog
+  sudo planctonctl start
+  ls -l $PIDFILE || true
+  sudo test -f $PIDFILE || dielog
+  sudo kill -0 $(sudo cat $PIDFILE) || dielog
+  sudo planctonctl drain-kill
+  sudo test -f /var/run/plancton/drain || dielog
+  sleep 40
+  sudo grep -qi "no new containers will be started" /var/log/plancton/plancton.log || dielog
+  sudo grep -qi "drain-kill mode requested" /var/log/plancton/plancton.log || dielog
+  sudo test -f /var/run/plancton/drain && ! sudo test -f /var/run/plancton/kill || dielog
