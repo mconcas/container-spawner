@@ -477,7 +477,7 @@ class Plancton(Daemon):
     self.streamer(series="daemon",
                   tags={ "hostname": self._hostname },
                   fields={ "containers": running,
-                           "status": "draining" if draining else "active"})
+                           "status": "draining" if draining else "active" })
     fitting_docks = int(self.idle*0.95*self._num_cpus/(self.conf["cpus_per_dock"]*100))
     launchable_containers = min(fitting_docks, max(self.conf["max_docks"]-running, 0))
     self.logctl.debug("Potentially fitting containers based on CPU utilisation: %d", fitting_docks)
