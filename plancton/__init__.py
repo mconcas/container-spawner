@@ -154,6 +154,7 @@ class Plancton(Daemon):
       "binds"             : [],               # list of bind mounts (all read-only)
       "devices"           : [],               # list of exposed devices
       "capabilities"      : [],               # list of added caps (e.g. SYS_ADMIN)
+      "drop_capabilities" : [],               # list of dropped caps (e.g. NET_RAW)
       "security_opts"     : []                # sec options (e.g. apparmor profile)
     }
 
@@ -270,7 +271,8 @@ class Plancton(Daemon):
                            "Devices"     : [ dict(zip([ "PathOnHost", "PathInContainer",
                                                         "CgroupPermissions" ], x.split(":", 2)))
                                              for x in self.conf["devices"] ],
-                           "CapAdd"      : self.conf["capabilities"]
+                           "CapAdd"      : self.conf["capabilities"],
+                           "CapDrop"     : self.conf["drop_capabilities"]
                          }
         }
     self.logctl.debug("Container definition for %s:\n%s" % (cname, json.dumps(c, indent=2)))
