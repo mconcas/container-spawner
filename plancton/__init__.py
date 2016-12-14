@@ -263,7 +263,7 @@ class Plancton(Daemon):
                            "Devices"     : [ dict(zip([ "PathOnHost", "PathInContainer",
                                                         "CgroupPermissions" ], x.split(":", 2)))
                                              for x in self.conf["devices"] ],
-                           "CapAdd"      : [ x.lstrip("+") for x in self.conf["capabilities"] if x and x[0]!="-" ]
+                           "CapAdd"      : [ x.lstrip("+") for x in self.conf["capabilities"] if x and x[0]!="-" ],
                            "CapDrop"     : [ x[1:] for x in self.conf["capabilities"] if x and x[0]=="-" ]
                          }
         }
