@@ -264,7 +264,7 @@ class Plancton(Daemon):
                                                         "CgroupPermissions" ], x.split(":", 2)))
                                              for x in self.conf["devices"] ],
                            "CapAdd"      : [ x.lstrip("+") for x in self.conf["capabilities"] if x and x[0]!="-" ],
-                           "CapDrop"     : [ x[1:] for x in self.conf["capabilities"] if x and x[0]=="-" ]
+                           "CapDrop"     : [ x.lstrip("-") for x in self.conf["capabilities"] if x and x[0]=="-" ]
                          }
         }
     self.logctl.debug("Container definition for %s:\n%s" % (cname, json.dumps(c, indent=2)))
