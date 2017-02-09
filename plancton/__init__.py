@@ -217,11 +217,17 @@ class Plancton(Daemon):
 
   # Set up monitoring target.
   def _influxdb_setup(self):
+    self.streamers = []
     if not self.conf["influxdb_url"]:
-      self.streamer = lambda *x,**y: True
+      self.streamers.append(lambda *x,**y: True)
       return
-    baseurl,db = self.conf["influxdb_url"].split("#")
-    self.streamer = InfluxDBStreamer(baseurl=baseurl, database=db)
+    if isinstance(self.conf["influxdb_url"], list):
+      for i,j in enumerate(self.conf["influxdb_url"]):
+        baseurl,db = self.conf["influxdb_url"][j].split("#")
+        self.streamers[i] = InfluxDBStreamer(baseurl=baseurl, database=db)
+    else:
+      baseurl,db = self.conf["influxdb_url"].split("#")
+      self.streamers[0] = InfluxDBStreamer(baseurl=baseurl, database=db)
 
   # Efficiency is calculated subtracting idletime per cpu from uptime.
   def _set_cpu_efficiency(self):
@@ -370,11 +376,12 @@ class Plancton(Daemon):
             if self._force_kill:
               self.logctl.info("Force killing %s" if self._force_kill else \
                                "Killing %s since it exceeded the max TTL", i['Id'])
-            self.streamer(series="container",
-                          tags={ "hostname": self._hostname,
-                                 "started": True,
-                                 "killed": True },
-                          fields={ "uptime": dock_uptime })
+            for streamer in self.streamers:
+              streamer(series="container",
+                       tags={ "hostname": self._hostname,
+                              "started": True,
+                              "killed": True },
+                       fields={ "uptime": dock_uptime })
             to_remove = True
           else:
             self.logctl.debug("Container %s is below its maximum TTL, leaving it alone", i["Id"])
@@ -391,18 +398,20 @@ class Plancton(Daemon):
             statobj_start = datetime.strptime(insdata['State']['StartedAt'][:19], "%Y-%m-%dT%H:%M:%S")
             statobj_end = datetime.strptime(insdata['State']['FinishedAt'][:19], "%Y-%m-%dT%H:%M:%S")
             dock_uptime = time.mktime(statobj_end.timetuple()) - time.mktime(statobj_start.timetuple())
-            self.streamer(series="container",
-                          tags={ "hostname": self._hostname,
-                                 "started": True,
-                                 "killed": False },
-                          fields={"uptime": dock_uptime})
+            for streamer in self.streamers:
+              streamer(series="container",
+                       tags={ "hostname": self._hostname,
+                              "started": True,
+                              "killed": False },
+                       fields={"uptime": dock_uptime})
         if "created" in i["State"]:
           # Container has never had any chance to start :-(
-          self.streamer(series="container",
-                        tags={ "hostname": self._hostname,
-                               "started": False,
-                               "killed": False },
-                        fields={ "uptime": 0 })
+          for streamer in self.streamers:
+            streamer(series="container",
+                     tags={ "hostname": self._hostname,
+                            "started": False,
+                            "killed": False },
+                     fields={ "uptime": 0 })
         to_remove = True
 
       if to_remove:
@@ -483,9 +492,10 @@ class Plancton(Daemon):
   def main_loop(self):
     self._set_cpu_efficiency()
     now = time.time()
-    self.streamer(series="daemon",
-                  tags={ "hostname": self._hostname },
-                  fields={ "uptime": now - self._start_time })
+    for streamer in self.streamers:
+      streamer(series="daemon",
+               tags={ "hostname": self._hostname },
+               fields={ "uptime": now - self._start_time })
     delta_config = now - self._last_confup_time
     delta_update = now - self._last_update_time
     draining = os.path.isfile(self._drainfile)
@@ -512,13 +522,14 @@ class Plancton(Daemon):
       self._influxdb_setup()
     running = self._count_containers()
     self.logctl.debug("CPU used: %.2f%%, available: %.2f%%" % (self.efficiency, self.idle))
-    self.streamer(series="measurement",
-                  tags={ "hostname": self._hostname },
-                  fields={ "cpu_eff": self.efficiency })
-    self.streamer(series="daemon",
-                  tags={ "hostname": self._hostname },
-                  fields={ "containers": running,
-                           "status": "draining" if draining else "active" })
+    for streamer in self.streamers:
+      streamer(series="measurement",
+               tags={ "hostname": self._hostname },
+               fields={ "cpu_eff": self.efficiency })
+      streamer(series="daemon",
+               tags={ "hostname": self._hostname },
+               fields={ "containers": running,
+                        "status": "draining" if draining else "active" })
     fitting_docks = int(self.idle*0.95*self._num_cpus/(self.conf["cpus_per_dock"]*100))
     launchable_containers = min(fitting_docks,
                                 max(self.conf["max_docks"]-running, 0),
