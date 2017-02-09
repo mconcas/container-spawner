@@ -224,10 +224,10 @@ class Plancton(Daemon):
     if isinstance(self.conf["influxdb_url"], list):
       for i,j in enumerate(self.conf["influxdb_url"]):
         baseurl,db = self.conf["influxdb_url"][j].split("#")
-        self.streamers[i] = InfluxDBStreamer(baseurl=baseurl, database=db)
+        self.streamers.append(InfluxDBStreamer(baseurl=baseurl, database=db))
     else:
       baseurl,db = self.conf["influxdb_url"].split("#")
-      self.streamers[0] = InfluxDBStreamer(baseurl=baseurl, database=db)
+      self.streamers.append(InfluxDBStreamer(baseurl=baseurl, database=db))
 
   # Efficiency is calculated subtracting idletime per cpu from uptime.
   def _set_cpu_efficiency(self):
