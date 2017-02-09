@@ -218,15 +218,10 @@ class Plancton(Daemon):
   # Set up monitoring target.
   def _influxdb_setup(self):
     self.streamers = []
-    if not self.conf["influxdb_url"]:
-      self.streamers.append(lambda *x,**y: True)
-      return
-    if isinstance(self.conf["influxdb_url"], list):
-      for i,j in enumerate(self.conf["influxdb_url"]):
-        baseurl,db = self.conf["influxdb_url"][j].split("#")
-        self.streamers.append(InfluxDBStreamer(baseurl=baseurl, database=db))
-    else:
-      baseurl,db = self.conf["influxdb_url"].split("#")
+    if not isinstance(self.conf["influxdb_url"], list):
+      self.conf["influxdb_url"] = [ self.conf["influxdb_url"] ]
+    for url in self.conf["influxdb_url"]:
+      baseurl,db = url.split("#")
       self.streamers.append(InfluxDBStreamer(baseurl=baseurl, database=db))
 
   # Efficiency is calculated subtracting idletime per cpu from uptime.
