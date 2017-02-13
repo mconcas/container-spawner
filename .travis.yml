@@ -27,22 +27,23 @@ script: |
               LOGFILE=/var/log/plancton/plancton.log
               DRAINFILE=/var/run/plancton/drain
               STOPFILE=/var/run/plancton/stop
-              CONFIGFILE=/var/run/plancton/config.yaml ;;
+              CONFDIR=/var/run/plancton ;;
       nosudo) PIDFILE=$HOME/.plancton/run/plancton.pid
               LOGFILE=$HOME/.plancton/log/plancton.log
               DRAINFILE=$HOME/.plancton/run/drain
               STOPFILE=$HOME/.plancton/run/stop
-              CONFIGFILE=$HOME/.plancton/run/config.yaml;;
+              CONFDIR=$HOME/.plancton/run ;;
     esac
 
     # Create databases and configuration
-    $MODE echo -e "---\ninfluxdb_url:" > $CONFIGFILE
+    $MODE mkdir -p $CONFDIR/conf
+    $MODE echo -e "---\ninfluxdb_url:" > $CONFDIR/conf/config.yaml
     for i in {1..3}; do
-      $MODE echo "  - http://locahost:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2)#plancton-monitor" >> $CONFIGFILE
+      $MODE echo "  - http://locahost:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2)#plancton-monitor" >> $CONFDIR/conf/config.yaml
     done
 
     # Test Plancton startup
-    $MODE planctonctl --confidr $CONFIGFILE start
+    $MODE planctonctl --confidr $CONFDIR start
     $MODE test -f $PIDFILE || dielog
     $MODE kill -0 $($MODE cat $PIDFILE) || dielog
 
@@ -61,7 +62,7 @@ script: |
     $MODE grep -qi "not starting containers, killing existing" $LOGFILE || dielog
 
     # Test Plancton drain and then stop mode
-    $MODE planctonctl --confidr $CONFIGFILE start
+    $MODE planctonctl --confidr $CONFDIR start
     $MODE test -f $PIDFILE || dielog
     $MODE kill -0 $($MODE cat $PIDFILE) || dielog
     $MODE planctonctl drain-stop
