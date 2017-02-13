@@ -218,15 +218,12 @@ class Plancton(Daemon):
       self.conf["influxdb_url"] = {x for x in self.conf["influxdb_url"] and "#" in x}
     else:
       self.conf["influxdb_url"] = set()
-    self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2))
+    # self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2))
 
   # Set up monitoring target.
   def _influxdb_setup(self):
     for url in self.conf["influxdb_url"]:
       self.streamers.add(InfluxDBStreamer(**dict(zip(["baseurl", "database"], url.split("#", 1)))))
-  #   self.streamers = [InfluxDBStreamer(baseurl=url.split("#")[0], database=url.split("#")[1]) \
-  #     for url in self.conf["influxdb_url"] and not (url.split("#")[0], url.split("#")[1]) in [(k.baseurl, k.database) for k in self.streamers]]
-  #   self.streamers = [x for x in self.streamers if (x.baseurl, x.database) in [(url.split("#")[0], url.split("#")[1]) for url in self.conf["influxdb_url"]]]
 
   # Efficiency is calculated subtracting idletime per cpu from uptime.
   def _set_cpu_efficiency(self):
