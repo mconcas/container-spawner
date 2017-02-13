@@ -26,12 +26,20 @@ script: |
       sudo)   PIDFILE=/var/run/plancton.pid
               LOGFILE=/var/log/plancton/plancton.log
               DRAINFILE=/var/run/plancton/drain
-              STOPFILE=/var/run/plancton/stop ;;
+              STOPFILE=/var/run/plancton/stop
+              CONFIGFILE=/etc/plancton/config.yaml ;;
       nosudo) PIDFILE=$HOME/.plancton/run/plancton.pid
               LOGFILE=$HOME/.plancton/log/plancton.log
               DRAINFILE=$HOME/.plancton/run/drain
-              STOPFILE=$HOME/.plancton/run/stop ;;
+              STOPFILE=$HOME/.plancton/run/stop
+              CONFIGFILE=$HOME/.plancton/config.yaml;;
     esac
+
+    # Create databases and configuration
+    $MODE echo -e "---\ninfluxdb_url:" > $CONFIGFILE
+    for i in {1..3}; do
+      $MODE echo "  - http://locahost:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2)#plancton-monitor" >> $CONFIGFILE
+    done
 
     # Test Plancton startup
     $MODE planctonctl start
