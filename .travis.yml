@@ -37,9 +37,9 @@ script: |
 
     # Create databases and configuration
     $MODE mkdir -p $CONFDIR/conf
-    $MODE echo -e "---\ninfluxdb_url:" > $CONFDIR/conf/config.yaml
+    echo -e "---\ninfluxdb_url:" | $MODE tee $CONFDIR/conf/config.yaml
     for i in {1..3}; do
-      $MODE echo "  - http://locahost:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2)#plancton-monitor" >> $CONFDIR/conf/config.yaml
+      echo "  - http://locahost:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2)#plancton-monitor" | $MODE tee -a $CONFDIR/conf/config.yaml
     done
 
     # Test Plancton startup
