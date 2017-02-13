@@ -138,7 +138,7 @@ class Plancton(Daemon):
     self.streamers = []
     self.docker_client = Lazy(lambda: Client(base_url=self._sockpath, version="auto"))
     self.conf = {
-      "influxdb_url"      : [],               # URL list to InfluxDB (with #database)
+      "influxdb_url"      : set(),            # URL set to InfluxDB (with #database)
       "updateconfig"      : 60,               # frequency of config updates (s)
       "image_expiration"  : 43200,            # frequency of image updates (s)
       "main_sleep"        : 30,               # main loop sleep (s)
@@ -213,17 +213,20 @@ class Plancton(Daemon):
       self.conf["docker_cmd"] = self.conf["docker_cmd"].split(" ")
     tmp_url_list = []
     if isinstance(self.conf["influxdb_url"], str):
-      self.conf["influxdb_url"] = [ self.conf["influxdb_url"] ]
-    if isinstance(self.conf["influxdb_url"], list):
-      tmp_url_list = [x for x in self.conf["influxdb_url"] and "#" in x]
-    self.conf["influxdb_url"] = tmp_url_list
+      self.conf["influxdb_url"] = set(self.conf["influxdb_url"])
+    if isinstance(self.conf["influxdb_url"], set):
+      self.conf["influxdb_url"] = {x for x in self.conf["influxdb_url"] and "#" in x}
+    else:
+      self.conf["influxdb_url"] = set()
     self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2))
 
   # Set up monitoring target.
   def _influxdb_setup(self):
-    self.streamers = [InfluxDBStreamer(baseurl=url.split("#")[0], database=url.split("#")[1]) \
-      for url in self.conf["influxdb_url"] and not (url.split("#")[0], url.split("#")[1]) in [(k.baseurl, k.database) for k in self.streamers]]
-    self.streamers = [x for x in self.streamers if (x.baseurl, x.database) in [(url.split("#")[0], url.split("#")[1]) for url in self.conf["influxdb_url"]]]
+    for url in self.conf["influxdb_url"]:
+      self.streamers.add(InfluxDBStreamer(**dict(zip(["baseurl", "database"], url.split("#", 1)))))
+  #   self.streamers = [InfluxDBStreamer(baseurl=url.split("#")[0], database=url.split("#")[1]) \
+  #     for url in self.conf["influxdb_url"] and not (url.split("#")[0], url.split("#")[1]) in [(k.baseurl, k.database) for k in self.streamers]]
+  #   self.streamers = [x for x in self.streamers if (x.baseurl, x.database) in [(url.split("#")[0], url.split("#")[1]) for url in self.conf["influxdb_url"]]]
 
   # Efficiency is calculated subtracting idletime per cpu from uptime.
   def _set_cpu_efficiency(self):
@@ -514,7 +517,7 @@ class Plancton(Daemon):
       except Exception as e:
         self.logctl.error("Cannot pull Docker image %s: no new containers, will retry later" % \
                           self.conf["docker_image"])
-    if set(prev_influxdb_url).symmetric_difference(set(self.conf["influxdb_url"])):
+    if prev_influxdb_url.symmetric_difference(self.conf["influxdb_url"]):
       self._influxdb_setup()
     running = self._count_containers()
     self.logctl.debug("CPU used: %.2f%%, available: %.2f%%" % (self.efficiency, self.idle))

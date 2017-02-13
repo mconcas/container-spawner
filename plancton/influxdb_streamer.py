@@ -55,3 +55,10 @@ class InfluxDBStreamer():
       self.logctl.error("Error sending data: %s" % e)
       self.db_is_created = False
       return False
+
+  def __hash__(self):
+    return hash(self.baseurl + "#" + self.database)
+
+  def __eq__(self, rh):
+    return self.baseurl == rh.baseurl and self.database == rh.database
+
