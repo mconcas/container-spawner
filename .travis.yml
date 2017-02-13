@@ -43,7 +43,7 @@ script: |
     done
 
     # Test Plancton startup
-    $MODE planctonctl --confidr $CONFDIR start
+    $MODE planctonctl --confdir $CONFDIR start
     $MODE test -f $PIDFILE || dielog
     $MODE kill -0 $($MODE cat $PIDFILE) || dielog
 
@@ -62,7 +62,7 @@ script: |
     $MODE grep -qi "not starting containers, killing existing" $LOGFILE || dielog
 
     # Test Plancton drain and then stop mode
-    $MODE planctonctl --confidr $CONFDIR start
+    $MODE planctonctl --confdir $CONFDIR start
     $MODE test -f $PIDFILE || dielog
     $MODE kill -0 $($MODE cat $PIDFILE) || dielog
     $MODE planctonctl drain-stop
