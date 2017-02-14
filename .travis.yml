@@ -74,12 +74,13 @@ script: |
     ! $MODE test -f $PIDFILE || dielog
 
     # Test Plancton multi-streaming
-    $MODE mkdir -p $CONFDIR/conf
-    echo -e "---\ninfluxdb_url:" | $MODE tee $CONFDIR/conf/config.yaml                                                                                   done
+    $MODE mkdir -p $CONFDIR
+    echo -e "---\ninfluxdb_url:" | $MODE tee $CONFDIR/config.yaml
     for i in {1..3}; do
       echo "  - http://0.0.0.0:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2 | tee -a ports)#plancton-monitor" |\
-        $MODE tee -a $CONFDIR/conf/config.yaml
+        $MODE tee -a $CONFDIR/config.yaml
     done
+
     $MODE planctonctl --confdir $CONFDIR start
     sleep 60
     for i in $(cat ports); do
