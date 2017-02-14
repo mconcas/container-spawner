@@ -138,7 +138,7 @@ class Plancton(Daemon):
     self.streamers = set()
     self.docker_client = Lazy(lambda: Client(base_url=self._sockpath, version="auto"))
     self.conf = {
-      "influxdb_url"      : [],               # URL list to InfluxDB (with #database)
+      "influxdb_url"      : set(),            # URL set to InfluxDB (with #database)
       "updateconfig"      : 60,               # frequency of config updates (s)
       "image_expiration"  : 43200,            # frequency of image updates (s)
       "main_sleep"        : 30,               # main loop sleep (s)
@@ -212,12 +212,11 @@ class Plancton(Daemon):
     if not isinstance(self.conf["docker_cmd"], list):
       self.conf["docker_cmd"] = self.conf["docker_cmd"].split(" ")
     if isinstance(self.conf["influxdb_url"], str):
-      self.conf["influxdb_url"] = set(self.conf["influxdb_url"])
+      self.conf["influxdb_url"] = set([self.conf["influxdb_url"]])
+    elif isinstance(self.conf["influxdb_url"], list):
+      self.conf["influxdb_url"] = set(filter(lambda x: "#" in x, self.conf["influxdb_url"]))
     else:
-      if isinstance(self.conf["influxdb_url"], list):
-        self.conf["influxdb_url"] = set(filter(lambda x: "#" in x, self.conf["influxdb_url"]))
-      else:
-        self.conf["influxdb_url"] = set()
+      self.conf["influxdb_url"] = set()
     self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2, default=list))
 
   # Set up monitoring target.
