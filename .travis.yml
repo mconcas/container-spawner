@@ -9,7 +9,6 @@ install: |
   set -x
   git rev-parse HEAD
   sudo pip install -e .
-  sudo plancton-bootstrap mconcas/plancton-conf:travis-test
 
 script: |
   set -ex
