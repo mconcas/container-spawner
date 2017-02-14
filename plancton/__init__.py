@@ -218,7 +218,7 @@ class Plancton(Daemon):
         self.conf["influxdb_url"] = set(filter(lambda x: "#" in x, self.conf["influxdb_url"]))
       else:
         self.conf["influxdb_url"] = set()
-    self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2, default=list(x)))
+    self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2, default=list))
 
   # Set up monitoring target.
   def _influxdb_setup(self):
