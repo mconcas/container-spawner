@@ -35,7 +35,7 @@ script: |
               LOGFILE=$HOME/.plancton/log/plancton.log
               DRAINFILE=$HOME/.plancton/run/drain
               STOPFILE=$HOME/.plancton/run/stop
-              CONFDIR=$HOME/.plancton/run/conf ;;
+              CONFDIR=$HOME/.plancton/conf ;;
     esac
 
     # Test Plancton startup
