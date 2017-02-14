@@ -39,7 +39,7 @@ script: |
     $MODE mkdir -p $CONFDIR/conf
     echo -e "---\ninfluxdb_url:" | $MODE tee $CONFDIR/conf/config.yaml
     for i in {1..3}; do
-      echo "  - http://locahost:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2)#plancton-monitor" | $MODE tee -a $CONFDIR/conf/config.yaml
+      echo "  - http://0.0.0.0:$(docker run -d -P influxdb | xargs docker port | awk '{print $3}' | cut -d':' -f2)#plancton-monitor" | $MODE tee -a $CONFDIR/conf/config.yaml
     done
 
     # Test Plancton startup
