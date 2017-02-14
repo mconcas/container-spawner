@@ -42,11 +42,6 @@ def cpu_times():
 def utc_time():
   return time.mktime(datetime.utcnow().timetuple())
 
-def set_default(obj):
-    if isinstance(obj, set):
-        return list(obj)
-    raise TypeError
-
 # Wrap API calls and catch exceptions to provide "robustness"
 def robust(tries=5, delay=3, backoff=2):
   def robust_decorator(f):
@@ -223,7 +218,7 @@ class Plancton(Daemon):
         self.conf["influxdb_url"] = set(filter(lambda x: "#" in x, self.conf["influxdb_url"]))
       else:
         self.conf["influxdb_url"] = set()
-    self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2, default=set_default))
+    self.logctl.debug("Configuration:\n%s" % json.dumps(self.conf, indent=2, default=list(x)))
 
   # Set up monitoring target.
   def _influxdb_setup(self):
