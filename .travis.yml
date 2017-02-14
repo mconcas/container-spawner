@@ -30,16 +30,16 @@ script: |
               LOGFILE=/var/log/plancton/plancton.log
               DRAINFILE=/var/run/plancton/drain
               STOPFILE=/var/run/plancton/stop
-              CONFDIR=/var/run/plancton ;;
+              CONFDIR=/var/run/plancton/conf ;;
       nosudo) PIDFILE=$HOME/.plancton/run/plancton.pid
               LOGFILE=$HOME/.plancton/log/plancton.log
               DRAINFILE=$HOME/.plancton/run/drain
               STOPFILE=$HOME/.plancton/run/stop
-              CONFDIR=$HOME/.plancton/run ;;
+              CONFDIR=$HOME/.plancton/run/conf ;;
     esac
 
     # Test Plancton startup
-    $MODE planctonctl --confdir $CONFDIR start
+    $MODE planctonctl start
     $MODE test -f $PIDFILE || dielog
     $MODE kill -0 $($MODE cat $PIDFILE) || dielog
 
@@ -58,7 +58,7 @@ script: |
     $MODE grep -qi "not starting containers, killing existing" $LOGFILE || dielog
 
     # Test Plancton drain and then stop mode
-    $MODE planctonctl --confdir $CONFDIR start
+    $MODE planctonctl start
     $MODE test -f $PIDFILE || dielog
     $MODE kill -0 $($MODE cat $PIDFILE) || dielog
     $MODE planctonctl drain-stop
@@ -82,7 +82,7 @@ script: |
         $MODE tee -a $CONFDIR/config.yaml
     done
 
-    $MODE planctonctl --confdir $CONFDIR start
+    $MODE planctonctl --confdir=$CONFDIR start
     sleep 60
     for i in $(cat ports); do
       GOOD_RET_VAL=$(curl -s http://0.0.0.0:$i/query?pretty=true --data db=plancton-monitor --data-urlencode 'q=SELECT COUNT(*) FROM "measurement"' |\
