@@ -221,6 +221,7 @@ class Plancton(Daemon):
 
   # Set up monitoring target.
   def _influxdb_setup(self):
+    self.streamers = set()
     for url in self.conf["influxdb_url"]:
       self.streamers.add(InfluxDBStreamer(**dict(zip(["baseurl", "database"], url.split("#", 1)))))
 
