@@ -234,7 +234,7 @@ class Plancton(Daemon):
     try:
       eff = float((deltaup*self._num_cpus - deltaidle)*100) / float(deltaup*self._num_cpus)
     except ZeroDivisionError as e:
-      self.logctl.warning("Division by zero in efficiency calculation: %s, assuming maximum", e)
+      pass
     self.uptime0 = curruptime
     self.idletime0 = curridletime
     self.efficiency = eff if eff > 0 else 0.0
