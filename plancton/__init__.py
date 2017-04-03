@@ -230,7 +230,11 @@ class Plancton(Daemon):
     curruptime,curridletime = cpu_times()
     deltaup = curruptime - self.uptime0
     deltaidle = curridletime - self.idletime0
-    eff = float((deltaup*self._num_cpus - deltaidle)*100) / float(deltaup*self._num_cpus)
+    eff = float(100)
+    try:
+      eff = float((deltaup*self._num_cpus - deltaidle)*100) / float(deltaup*self._num_cpus)
+    except ZeroDivisionError as e:
+      self.logctl.warning("Division by zero in efficiency calculation: %s, assuming maximum", e)
     self.uptime0 = curruptime
     self.idletime0 = curridletime
     self.efficiency = eff if eff > 0 else 0.0
