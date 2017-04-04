@@ -261,6 +261,7 @@ class Daemon(object):
       try:
         # write pidfile and schedule deletion
         atexit.register(self.delPid)
+        self.pid = int(os.getpid())
         self.writePid()
         self.run()   
       except KeyboardInterrupt:
