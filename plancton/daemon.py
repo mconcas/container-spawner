@@ -256,8 +256,8 @@ class Daemon(object):
       self.trapExitSignals(self.exitHandlerReal)
       self.readPid()
         if self.isRunning():
-            self.logctl.info('already running with PID %d' % self.pid);
-            return True
+          self.logctl.info('already running with PID %d' % self.pid);
+          return True
       try:
         # write pidfile and schedule deletion
         atexit.register(self.delPid)
